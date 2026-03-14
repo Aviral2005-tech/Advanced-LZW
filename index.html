@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sumit LZW</title>
+  <style>
+    body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #f3f4f6, #e0e7ff);
+  position: relative;
+  overflow: hidden;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #c084fc, #7c3aed);
+  border-radius: 50%;
+  z-index: -1;
+  opacity: 0.2;
+  animation: float 12s ease-in-out infinite;
+}
+
+body::before {
+  top: -100px;
+  left: -150px;
+}
+
+body::after {
+  bottom: -100px;
+  right: -150px;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(30px);
+  }
+}
+
+#dropZone {
+  width: 300px;
+  height: 200px;
+  margin: 20px auto;
+  border: 2px dashed #ccc;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  line-height: 200px;
+  color: #777;
+  font-size: 18px;
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  z-index: 1;
+}
+
+#dropZone.hover {
+  border-color: #4f46e5;
+  color: #4f46e5;
+  background: #e0e7ff;
+}
+
+input[type="file"] {
+  margin-top: 20px;
+}
+
+.button {
+  padding: 10px 25px;
+  margin: 10px;
+  border: none;
+  border-radius: 50px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.compress {
+  background: linear-gradient(135deg, #00b4d8, #0077b6);
+}
+
+.decompress {
+  background: linear-gradient(135deg, #a855f7, #7e22ce);
+}
+
+  </style>
+</head>
+<body>
+
+  <h2>Upload a .txt File</h2>
+
+  <div id="dropZone">Drag & Drop .txt file here</div>
+  <input type="file" id="fileInput" accept=".txt">
+
+  <br><br>
+  <button class="button compress" onclick="processFile('compress')">Compress</button>
+  <button class="button decompress" onclick="processFile('decompress')">Decompress</button>
+
+  <script>
+  let fileContent = "";
+  const dropZone = document.getElementById("dropZone");
+  const fileInput = document.getElementById("fileInput");
+
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.classList.add("hover");
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.classList.remove("hover");
+  });
+
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.classList.remove("hover");
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  fileInput.addEventListener("change", () => {
+    handleFile(fileInput.files[0]);
+  });
+
+  function handleFile(file) {
+    if (!file || file.type !== "text/plain") {
+      alert("Only .txt files are allowed.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      fileContent = e.target.result;
+      alert("File loaded successfully.");
+    };
+    reader.readAsText(file);
+  }
+
+  function processFile(action) {
+    if (!fileContent) {
+      alert("Please upload a .txt file first.");
+      return;
+    }
+
+    fetch(`https://dexter2.onrender.com/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: fileContent })
+    })
+    .then(res => {
+      if (!res.ok) throw new Error("Server error");
+      return res.text();
+    })
+    .then(data => {
+      const blob = new Blob([data], { type: 'text/plain' });
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = `${action}.txt`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      alert(`Error occurred during ${action}.`);
+    });
+  }
+</script>
+
+  </script>
+
+</body>
+</html>

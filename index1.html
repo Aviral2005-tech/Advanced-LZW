@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TXT File Upload</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      text-align: center;
+    }
+
+    #dropZone {
+      width: 300px;
+      height: 200px;
+      margin: 20px auto;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      line-height: 200px;
+      color: #aaa;
+      font-size: 18px;
+      transition: 0.3s;
+    }
+
+    #dropZone.hover {
+      border-color: #007bff;
+      color: #007bff;
+    }
+
+    input[type="file"] {
+      margin-top: 20px;
+    }
+
+    .button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .compress {
+      background-color: #007bff; /* Blue */
+    }
+
+    .decompress {
+      background-color: #6f42c1; /* Purple */
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Upload a .txt File</h2>
+
+  <div id="dropZone">Drag & Drop .txt file here</div>
+  <input type="file" id="fileInput" accept=".txt">
+
+  <br><br>
+  <button class="button compress" onclick="processFile('compress')">Compress</button>
+  <button class="button decompress" onclick="processFile('decompress')">Decompress</button>
+
+  <script>
+    let fileContent = "";
+    const dropZone = document.getElementById("dropZone");
+    const fileInput = document.getElementById("fileInput");
+
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("hover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("hover");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("hover");
+      handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener("change", () => {
+      handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      if (!file || file.type !== "text/plain") {
+        alert("Only .txt files are allowed.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        fileContent = e.target.result;
+        alert("File loaded successfully.");
+      };
+      reader.readAsText(file);
+    }
+
+    function processFile(action) {
+      if (!fileContent) {
+        alert("Please upload a .txt file first.");
+        return;
+      }
+
+      fetch('/' + action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: fileContent })
+      })
+      .then(res => res.text())
+      .then(data => {
+        const blob = new Blob([data], { type: 'text/plain' });
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(blob);
+        downloadLink.download = action + ".txt";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        alert("Error occurred during " + action);
+      });
+    }
+  </script>
+
+</body>
+</html>
